@@ -1,0 +1,6 @@
+1-¿Qué hacer con las palabras que no pertenecen al word embedding? ¿Se borran del corpus?
+¿Se mapean a un vector de palabras desconocidas (requiere conocer la distribución del word embedding para saber qué vector asignarle)?
+2-Para incluir a los signos de puntuación y los emoticones, se parseó los textos con una expresión regular para agregar espacios
+antes y después de estos caracteres. ¿Es correcto?
+3-¿La capa de embedding debería manejar solo los embeddings de las palabras del corpus de entrenamiento o todos los
+embeddings del word embedding? De vuelta, es posible que haya palabras sin word embedding en el corpus, ¿qué hacer con ellas?
