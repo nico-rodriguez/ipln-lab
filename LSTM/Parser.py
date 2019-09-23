@@ -32,9 +32,12 @@ def embeddings_index(word_embedding_filename):
 """
 Given a index of embeddings (dictionary of word->(vector embedding)), return a word index (dictionary of word->number).
 """
-def word_index(embeddings_index):
+def word_index(embeddings_index, remove_unknown_words=False):
     words = embeddings_index.keys()
-    indexes = [(i+1) for i in range(len(embeddings_index))]     # save index 0 for unknown words
+    if remove_unknown_words:
+        indexes = [i for i in range(len(embeddings_index))]
+    else:
+        indexes = [(i+1) for i in range(len(embeddings_index))]     # save index 0 for unknown words
     return dict(zip(words, indexes))
 
 
@@ -43,11 +46,14 @@ Receives an embeddings index (the output of corpus2embeddings_index function), a
 and a vector_size, and returns an embedding matrix which may be used for creating an embedding layer
 in a Keras neural network.
 """
-def embedding_matrix(embeddings_index, word_index, vector_size=300):
+def embedding_matrix(embeddings_index, word_index, vector_size=300, remove_unknown_words=False):
     vocab_size = len(word_index)
     assert vocab_size == len(embeddings_index)
     assert len(embeddings_index) == len(word_index)
-    embedding_matrix = np.zeros((vocab_size+1, vector_size))    # save index 0 for unknown words
+    if remove_unknown_words:
+        embedding_matrix = np.zeros((vocab_size, vector_size))
+    else:
+        embedding_matrix = np.zeros((vocab_size+1, vector_size))    # save index 0 for unknown words
     for word, i in word_index.items():
         embedding_vector = embeddings_index.get(word)
         if embedding_vector is not None and len(embedding_vector) == vector_size:
@@ -77,7 +83,7 @@ def space_non_alphanumeric(text):
 """
 Receives a corpus file name and parses it, returning 
 """
-def parse_corpus(corpus_filename, word_index, max_features=35569):
+def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown_words=False):
     print('Parsing {file_name}...'.format(file_name=corpus_filename))
     df = pd.read_csv(corpus_filename)
     tokenizer = Tokenizer(num_words=max_features, filters='', lower=False, split=' ', char_level=False)
@@ -89,7 +95,11 @@ def parse_corpus(corpus_filename, word_index, max_features=35569):
     list_tokenized_texts = []
     for i in range(len(texts_list)):
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
-        list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else 0, word_list)))    # save index 0 for unknown words
+        if remove_unknown_words:
+            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else -1, word_list)))
+            list_tokenized_texts[-1] = list(filter(lambda x: x != -1, list_tokenized_texts[-1]))
+        else:
+            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else 0, word_list)))    # save index 0 for unknown words
 
     max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
