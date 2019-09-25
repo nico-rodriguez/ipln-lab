@@ -1,4 +1,4 @@
-from keras.layers import Dense, Embedding, LSTM
+from keras.layers import Dense, Embedding, LSTM, GRU
 from keras.models import Sequential
 from tensorflow.logging import ERROR
 from tensorflow.logging import set_verbosity
@@ -24,7 +24,8 @@ if __name__ == '__main__':
     model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=40,
                         weights=[embedding_matrix], trainable=False))
     model.add(LSTM(vector_size, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
-                   activation='softsign'))
+                   activation='softsign', return_sequences=True))
+    model.add(GRU(units=vector_size))
     model.add(Dense(1, activation='relu'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 

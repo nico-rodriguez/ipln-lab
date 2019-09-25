@@ -20,7 +20,7 @@ Parse the word embeddings file. Returns a dictionary that maps words to their re
 def embeddings_index(word_embedding_filename):
     print('Indexing word vectors...')
     embeddings_index = {}
-    with open(word_embedding_filename) as f:
+    with open(word_embedding_filename, encoding="utf8") as f:
         for line in f:
             word, coefs = line.split(maxsplit=1)
             coefs = np.fromstring(coefs, 'f', sep=' ')
