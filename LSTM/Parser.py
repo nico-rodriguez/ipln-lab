@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import re
 import time
+import csv
 
 """
 *** Parsing functions for the word embeddings ***
@@ -20,7 +21,7 @@ Parse the word embeddings file. Returns a dictionary that maps words to their re
 def embeddings_index(word_embedding_filename):
     print('Indexing word vectors...')
     embeddings_index = {}
-    with open(word_embedding_filename) as f:
+    with open(word_embedding_filename, encoding="utf-8") as f:
         for line in f:
             word, coefs = line.split(maxsplit=1)
             coefs = np.fromstring(coefs, 'f', sep=' ')
@@ -76,21 +77,47 @@ def csv2dataframe(data_filename):
 Replace every non alphanumeric character c with the string ' c ' (the character c followed and preceded by a space.
 """
 def space_non_alphanumeric(text):
-    r = re.compile('([^a-zA-Z0-9 \t\n\r\f\váéíóú])')
+    r = re.compile('([^a-zA-Z0-9ñÍÓÚÉÁ \t\n\r\f\váéíóú])')
     return r.sub(r' \1 ', text)
 
+def conditional_lowercase(word):
+    if word.isupper():
+        return word.lower()
+    else:
+        return word
+
+def clean_tweet(tweet):
+    tweet = re.sub('http\S+\s*', '', tweet)  # remove URLs
+    tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
+    tweet = re.sub('#\S+', '', tweet)  # remove hashtags
+    tweet = re.sub('@\S+', '', tweet)  # remove mentions
+    tweet = re.sub('[%s]' % re.escape(""""#$%&'()*+,/:;<=>@[\]^_`{|}~"""), '', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
+    tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespace
+    return tweet
+
+def pre_process_tweets(tweets):
+    clean_list = tweets.lower().strip().split()
+    clean_list = list(map(clean_tweet, clean_list))
+    return ' '.join(clean_list)
 
 """
 Receives a corpus file name and parses it, returning 
 """
-def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown_words=False):
+def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown_words=False, clean_up=False):
     print('Parsing {file_name}...'.format(file_name=corpus_filename))
     df = pd.read_csv(corpus_filename)
     tokenizer = Tokenizer(num_words=max_features, filters='', lower=False, split=' ', char_level=False)
     texts_list = df['text'].tolist()
+    if clean_up:
+        texts_list = list(map(pre_process_tweets, texts_list))
     texts_list = list(map(space_non_alphanumeric, texts_list))
     tokenizer.fit_on_texts(texts_list)
     # list_tokenized_texts = tokenizer.texts_to_sequences(texts_list)
+   
+    # to check how data is being processed
+    with open('corpusss.csv', 'w', newline='', encoding="utf-8") as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(texts_list)
 
     list_tokenized_texts = []
     for i in range(len(texts_list)):
@@ -117,6 +144,7 @@ def test():
     DATA_TRAIN = '../corpus/data_train.csv'
     DATA_VAL = '../corpus/data_val.csv'
     WORD_EMBEDDINGS = '../word_embedding/intropln2019_embeddings_es_300.txt'
+    
 
     print('Test space_non_alphanumeric')
     s1 = 'Esos que dicen que lo más difícil en la vida es olvidar a alguien seguro nunca han intentado hacer un sándwich sin comer rebanadas de jamón.'
