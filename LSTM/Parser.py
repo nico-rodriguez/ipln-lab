@@ -23,7 +23,9 @@ def embeddings_index(word_embedding_filename):
     with open(word_embedding_filename) as f:
         for line in f:
             word, coefs = line.split(maxsplit=1)
+
             coefs = np.fromstring(coefs, 'f', sep=' ')
+            #import pdb; pdb.set_trace()
             embeddings_index[word] = coefs
     print('Found %s word vectors.' % len(embeddings_index))
     return embeddings_index
@@ -76,8 +78,11 @@ def csv2dataframe(data_filename):
 Replace every non alphanumeric character c with the string ' c ' (the character c followed and preceded by a space.
 """
 def space_non_alphanumeric(text):
+    #import pdb; pdb.set_trace()
     r = re.compile('([^a-zA-Z0-9 \t\n\r\f\váéíóú])')
-    return r.sub(r' \1 ', text)
+    a = r.sub(r' \1 ', text)
+    #import pdb; pdb.set_trace()
+    return a
 
 
 """
@@ -91,10 +96,12 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
     texts_list = list(map(space_non_alphanumeric, texts_list))
     tokenizer.fit_on_texts(texts_list)
     # list_tokenized_texts = tokenizer.texts_to_sequences(texts_list)
-
+    #import pdb; pdb.set_trace()
     list_tokenized_texts = []
     for i in range(len(texts_list)):
+        #import pdb; pdb.set_trace()
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
+
         if remove_unknown_words:
             list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else -1, word_list)))
             list_tokenized_texts[-1] = list(filter(lambda x: x != -1, list_tokenized_texts[-1]))
@@ -103,6 +110,7 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
 
     max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
+    import pdb; pdb.set_trace()
     y = df['humor'].tolist()
     print('{texts_num} texts processed'.format(texts_num=len(x)))
     print('{vocab_num} different words'.format(vocab_num=len(tokenizer.word_index)))
