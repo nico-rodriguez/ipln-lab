@@ -10,21 +10,23 @@ import pandas as pd
 import re
 import time
 import csv
-
+import nltk
+from operator import itemgetter
 """
 *** Parsing functions for the word embeddings ***
 """
 
-max_dist = 2
+max_dist = 3
 
-def get_nearest(tokenizer, word_list_tmp):
-    import pdb; pdb.set_trace()
-    candidates = []
+def get_nearest(target, tokenizer, word_list_tmp):
+    candidates = [w if nltk.edit_distance(target,w) < max_dist else None for w in word_list_tmp.keys()]
+    candidates = [c for c in candidates if c]
+    candidates = [(c, tokenizer.word_counts[c]) for c in candidates if c in tokenizer.word_counts]
 
-
-def prueba():
-    print('ok prueba')
-    return 0
+    if candidates:
+        return (max(candidates,key=itemgetter(1))[0])
+    else:
+        return 0
 
 """
 Parse the word embeddings file. Returns a dictionary that maps words to their respective word embedding vector.
@@ -138,7 +140,7 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
             list_tokenized_texts[-1] = list(filter(lambda x: x != -1, list_tokenized_texts[-1]))
         else:
             #list_tokenized_texts.append(return_word_tokenized(word_list, tokenizer))
-            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else get_nearest(tokenizer, word_index), word_list)))    # save index 0 for unknown words
+            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else get_nearest(x, tokenizer, word_index), word_list)))    # save index 0 for unknown words
 
     max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
