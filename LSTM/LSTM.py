@@ -160,7 +160,8 @@ if __name__ == '__main__':
 
     max_features = 35569
     vector_size = 300
-    remove_unknown_words = True
+    #remove_unknown_words = True
+    remove_unknown_words = False
     perform_clean_up = False
 
     embeddings_index = Parser.embeddings_index(WORD_EMBEDDINGS_FILENAME)
