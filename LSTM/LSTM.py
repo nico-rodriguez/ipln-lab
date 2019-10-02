@@ -8,6 +8,8 @@ from matplotlib import pyplot
 from Metrics import Metrics
 import Parser
 
+import gensim
+
 
 def single_lstm(embedding_matrix):
     units = 30
@@ -160,9 +162,10 @@ if __name__ == '__main__':
 
     max_features = 35569
     vector_size = 300
-    #remove_unknown_words = True
-    remove_unknown_words = False
+    remove_unknown_words = True
+    #remove_unknown_words = False
     perform_clean_up = False
+    #perform_clean_up = True
 
     embeddings_index = Parser.embeddings_index(WORD_EMBEDDINGS_FILENAME)
     word_index = Parser.word_index(embeddings_index, remove_unknown_words)
@@ -174,6 +177,9 @@ if __name__ == '__main__':
     
     model = lstm_gru(embedding_matrix)
     model.summary()
+
+    
+    #print(model_sg.wv.most_similar_cosmul('peron'))
     test_model('lstm_gru', model, x_train, y_train, x_val, y_val)
     
     '''

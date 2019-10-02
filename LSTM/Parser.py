@@ -17,16 +17,27 @@ from operator import itemgetter
 """
 
 max_dist = 3
+already_computed = {}
 
 def get_nearest(target, tokenizer, word_list_tmp):
-    candidates = [w if nltk.edit_distance(target,w) < max_dist else None for w in word_list_tmp.keys()]
-    candidates = [c for c in candidates if c]
-    candidates = [(c, tokenizer.word_counts[c]) for c in candidates if c in tokenizer.word_counts]
-
-    if candidates:
-        return (max(candidates,key=itemgetter(1))[0])
+    if target in already_computed:
+        return already_computed[target]
     else:
-        return 0
+        non_word = re.findall(r"[^a-zA-Zäáàëéèíìöóòúùñ]", target)
+        #print('not word target: ' + target)
+        if non_word:
+            return 0
+        else:
+            candidates = [w if nltk.edit_distance(target,w) < max_dist else None for w in word_list_tmp.keys()]
+            candidates = [c for c in candidates if c]
+            candidates = [(c, tokenizer.word_counts[c]) for c in candidates if c in tokenizer.word_counts]
+            if candidates:
+                already_computed[target] = max(candidates,key=itemgetter(1))[0]
+                print(target, 'will be replaced for: ', already_computed[target])
+                return (word_list_tmp[already_computed[target]])
+                
+            else:
+                return 0
 
 """
 Parse the word embeddings file. Returns a dictionary that maps words to their respective word embedding vector.
@@ -100,12 +111,14 @@ def conditional_lowercase(word):
         return word
 
 def clean_tweet(tweet):
+    #print('tweet cleaned')
     tweet = re.sub('http\S+\s*', '', tweet)  # remove URLs
     tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
     tweet = re.sub('#\S+', '', tweet)  # remove hashtags
     tweet = re.sub('@\S+', '', tweet)  # remove mentions
     tweet = re.sub('[%s]' % re.escape(""""#$%&'()*+,/:;<=>@[\]^_`{|}~"""), '', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
     tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespace
+    tweet = re.sub('\n', ' ', tweet)
     return tweet
 
 def pre_process_tweets(tweets):
@@ -133,6 +146,13 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
         wr.writerow(texts_list)
 
     list_tokenized_texts = []
+    import pdb; pdb.set_trace()
+    import gensim;
+
+    prueba = text_to_word_sequence(texts_list[0], filters='', lower=False, split=' ')
+    model_sg = gensim.models.Word2Vec(sentences=texts_list, size=300, window=5, workers=4, min_count = 1)
+
+
     for i in range(len(texts_list)):
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
         if remove_unknown_words:
@@ -142,6 +162,7 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
             #list_tokenized_texts.append(return_word_tokenized(word_list, tokenizer))
             list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else get_nearest(x, tokenizer, word_index), word_list)))    # save index 0 for unknown words
 
+            #import pdb; pdb.set_trace()
     max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
     y = df['humor'].tolist()
