@@ -10,6 +10,8 @@ import pandas as pd
 import re
 import time
 import csv
+import nltk
+from difflib import get_close_matches
 
 """
 *** Parsing functions for the word embeddings ***
@@ -25,10 +27,14 @@ def embeddings_index(word_embedding_filename):
         for line in f:
             word, coefs = line.split(maxsplit=1)
             coefs = np.fromstring(coefs, 'f', sep=' ')
-            embeddings_index[word] = coefs
+            embeddings_index[word.lower()] = coefs
     print('Found %s word vectors.' % len(embeddings_index))
-    return embeddings_index
 
+    with open('new_embeddings.csv', 'w', encoding="utf-8") as f:
+        for key in embeddings_index.keys():
+            f.write("%s %s\n"%(key,embeddings_index[key]))
+
+    return embeddings_index
 
 """
 Given a index of embeddings (dictionary of word->(vector embedding)), return a word index (dictionary of word->number).
@@ -72,13 +78,14 @@ Given a csv corpus file name, returns it as a pandas data frame
 def csv2dataframe(data_filename):
     return pd.read_csv(data_filename)
 
-
 """
 Replace every non alphanumeric character c with the string ' c ' (the character c followed and preceded by a space.
 """
+
 def space_non_alphanumeric(text):
     r = re.compile('([^a-zA-Z0-9ñÍÓÚÉÁ \t\n\r\f\váéíóú])')
     return r.sub(r' \1 ', text)
+
 
 def conditional_lowercase(word):
     if word.isupper():
@@ -100,10 +107,41 @@ def pre_process_tweets(tweets):
     clean_list = list(map(clean_tweet, clean_list))
     return ' '.join(clean_list)
 
+def try_recover_word(word, word_index, words_embeddings_array):
+    matches = get_close_matches(word, words_embeddings_array)
+    if len(matches) is 0:
+        return -1, False
+    else:
+        first = matches[0]
+        index = word_index[first]
+        return index, True
+
+def process_word_list(word_list, word_index, words_embeddings_array):
+    result_word_list = []
+    match_count = 0
+    count = 0
+    for word in word_list:
+        if word in word_index:
+            match_count += 1
+            result_word_list.append(word_index[word])
+        else: #fijarse si la pudo recuperar
+            new_word, recovered = try_recover_word(word, word_index, words_embeddings_array)
+            result_word_list.append(new_word)
+            if recovered:
+                match_count += 1
+        count += 1
+    return result_word_list, match_count, count
+
+def sorted_dict_keys(dict):
+    keys = dict.keys()
+    sorted(keys)
+    return keys
+
 """
 Receives a corpus file name and parses it, returning 
 """
-def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown_words=False, clean_up=False):
+
+def parse_corpus(corpus_filename, word_index, embeddings_index, max_features=35569, remove_unknown_words=False, clean_up=False):
     print('Parsing {file_name}...'.format(file_name=corpus_filename))
     df = pd.read_csv(corpus_filename)
     tokenizer = Tokenizer(num_words=max_features, filters='', lower=False, split=' ', char_level=False)
@@ -113,7 +151,11 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
     texts_list = list(map(space_non_alphanumeric, texts_list))
     tokenizer.fit_on_texts(texts_list)
     # list_tokenized_texts = tokenizer.texts_to_sequences(texts_list)
-   
+
+    words_embeddings_array = sorted_dict_keys(word_index)
+    match_count=0
+    max_count=0
+
     # to check how data is being processed
     with open('corpusss.csv', 'w', newline='', encoding="utf-8") as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
@@ -122,18 +164,20 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
     list_tokenized_texts = []
     for i in range(len(texts_list)):
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
+        processed_word_list, match, count = process_word_list(word_list, word_index, words_embeddings_array)
+        list_tokenized_texts.append(processed_word_list)
+        match_count += match
+        max_count += count
         if remove_unknown_words:
-            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else -1, word_list)))
             list_tokenized_texts[-1] = list(filter(lambda x: x != -1, list_tokenized_texts[-1]))
         else:
-            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else 0, word_list)))    # save index 0 for unknown words
-
+            list_tokenized_texts[-1] = list(map(lambda x: x if x != -1 else 0, list_tokenized_texts[-1]))   # save index 0 for unknown words
     max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
     y = df['humor'].tolist()
     print('{texts_num} texts processed'.format(texts_num=len(x)))
     print('{vocab_num} different words'.format(vocab_num=len(tokenizer.word_index)))
-    return x, y, tokenizer.word_index
+    return x, y, tokenizer.word_index, match_count, max_count
 
 
 """
@@ -144,7 +188,6 @@ def test():
     DATA_TRAIN = '../corpus/data_train.csv'
     DATA_VAL = '../corpus/data_val.csv'
     WORD_EMBEDDINGS = '../word_embedding/intropln2019_embeddings_es_300.txt'
-    
 
     print('Test space_non_alphanumeric')
     s1 = 'Esos que dicen que lo más difícil en la vida es olvidar a alguien seguro nunca han intentado hacer un sándwich sin comer rebanadas de jamón.'

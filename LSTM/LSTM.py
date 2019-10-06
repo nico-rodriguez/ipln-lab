@@ -7,7 +7,8 @@ from tensorflow.logging import set_verbosity
 from matplotlib import pyplot
 from Metrics import Metrics
 import Parser
-
+import time
+import datetime
 
 def single_lstm(embedding_matrix):
     units = 30
@@ -146,9 +147,8 @@ def test_model(model_name, model, x_train, y_train, x_val, y_val):
     pyplot.close()
     '''
 
-
-
 if __name__ == '__main__':
+    start_time = time.time()
     #../word_embedding/intropln2019_embeddings_es_300.txt
     #../word_embedding/SBW-vectors-300-min5.txt
     WORD_EMBEDDINGS_FILENAME = '../word_embedding/intropln2019_embeddings_es_300.txt'
@@ -160,21 +160,25 @@ if __name__ == '__main__':
 
     max_features = 35569
     vector_size = 300
-    remove_unknown_words = True
-    perform_clean_up = False
+    perform_clean_up = True
+    remove_unknown_words = False
 
     embeddings_index = Parser.embeddings_index(WORD_EMBEDDINGS_FILENAME)
     word_index = Parser.word_index(embeddings_index, remove_unknown_words)
     embedding_matrix = Parser.embedding_matrix(embeddings_index, word_index, vector_size, remove_unknown_words)
 
-    x_train, y_train, _ = Parser.parse_corpus(DATA_TRAIN, word_index, max_features, remove_unknown_words, perform_clean_up)
-    x_val, y_val, _ = Parser.parse_corpus(DATA_VAL, word_index, max_features, remove_unknown_words, perform_clean_up)
+    x_train, y_train, _, c1, m1 = Parser.parse_corpus(DATA_TRAIN, word_index, embeddings_index, max_features, remove_unknown_words, perform_clean_up)
+    x_val, y_val, _, c2, m2 = Parser.parse_corpus(DATA_VAL, word_index, embeddings_index, max_features, remove_unknown_words, perform_clean_up)
     
-    
-    model = lstm_gru(embedding_matrix)
+    print("counts:")
+    print(m1-c1)
+    print(m2-c2)
+
+    model = single_lstm(embedding_matrix)
     model.summary()
-    test_model('lstm_gru', model, x_train, y_train, x_val, y_val)
+    test_model('lstm', model, x_train, y_train, x_val, y_val)
     
+    print("--- %s Elapsed time ---" % (str(datetime.timedelta(seconds=(time.time() - start_time)))))
     '''
     model = single_lstm(embedding_matrix)
     test_model('single_lstm', model, x_train, y_train, x_val, y_val)
