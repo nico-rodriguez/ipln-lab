@@ -16,24 +16,32 @@ from operator import itemgetter
 *** Parsing functions for the word embeddings ***
 """
 
-max_dist = 3
+max_dist = 2
+quota = 200 #50 #150 #200 #100
 already_computed = {}
 
 def get_nearest(target, tokenizer, word_list_tmp):
+    #import pdb; pdb.set_trace()
+    global quota
+    if quota == 0:
+        return 0
     if target in already_computed:
-        return already_computed[target]
+        return (word_list_tmp[already_computed[target]])
     else:
         non_word = re.findall(r"[^a-zA-Zäáàëéèíìöóòúùñ]", target)
         #print('not word target: ' + target)
         if non_word:
             return 0
         else:
+            quota = quota - 1
+            if quota == 0:
+                print('no more fixed words')
             candidates = [w if nltk.edit_distance(target,w) < max_dist else None for w in word_list_tmp.keys()]
             candidates = [c for c in candidates if c]
             candidates = [(c, tokenizer.word_counts[c]) for c in candidates if c in tokenizer.word_counts]
             if candidates:
                 already_computed[target] = max(candidates,key=itemgetter(1))[0]
-                print(target, 'will be replaced for: ', already_computed[target])
+                #print(target, 'will be replaced for: ', already_computed[target])
                 return (word_list_tmp[already_computed[target]])
                 
             else:
@@ -146,11 +154,11 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
         wr.writerow(texts_list)
 
     list_tokenized_texts = []
-    import pdb; pdb.set_trace()
-    import gensim;
+    #import pdb; pdb.set_trace()
+    #import gensim;
 
-    prueba = text_to_word_sequence(texts_list[0], filters='', lower=False, split=' ')
-    model_sg = gensim.models.Word2Vec(sentences=texts_list, size=300, window=5, workers=4, min_count = 1)
+    #prueba = text_to_word_sequence(texts_list[0], filters='', lower=False, split=' ')
+    #model_sg = gensim.models.Word2Vec(sentences=texts_list, size=300, window=5, workers=4, min_count = 1)
 
 
     for i in range(len(texts_list)):

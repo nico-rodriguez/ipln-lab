@@ -123,7 +123,7 @@ def parallel_bidirectional_lstm_lstm_gru(embedding_matrix):
 def test_model(model_name, model, x_train, y_train, x_val, y_val):
     #plot_model(model, to_file=model_name+'_model.png', expand_nested=True)
     batch_size = 32
-    epochs = 10
+    epochs = 1
     csv_logger = CSVLogger(model_name+'_training.log')
     metrics = Metrics()
     metrics.set_file_name(model_name+'_metrics.log')
@@ -162,10 +162,10 @@ if __name__ == '__main__':
 
     max_features = 35569
     vector_size = 300
-    remove_unknown_words = True
-    #remove_unknown_words = False
-    perform_clean_up = False
-    #perform_clean_up = True
+    #remove_unknown_words = True
+    remove_unknown_words = False
+    #perform_clean_up = False
+    perform_clean_up = True
 
     embeddings_index = Parser.embeddings_index(WORD_EMBEDDINGS_FILENAME)
     word_index = Parser.word_index(embeddings_index, remove_unknown_words)
