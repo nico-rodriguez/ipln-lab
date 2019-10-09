@@ -4,11 +4,9 @@ from keras.models import Model, Sequential
 from keras.utils import plot_model
 from tensorflow.logging import ERROR
 from tensorflow.logging import set_verbosity
-from matplotlib import pyplot
+#from matplotlib import pyplot
 from Metrics import Metrics
 import Parser
-
-import gensim
 
 
 def single_lstm(embedding_matrix):
@@ -173,15 +171,15 @@ if __name__ == '__main__':
 
     x_train, y_train, _ = Parser.parse_corpus(DATA_TRAIN, word_index, max_features, remove_unknown_words, perform_clean_up)
     x_val, y_val, _ = Parser.parse_corpus(DATA_VAL, word_index, max_features, remove_unknown_words, perform_clean_up)
-    
-    
+
+
     model = lstm_gru(embedding_matrix)
     model.summary()
 
-    
+
     #print(model_sg.wv.most_similar_cosmul('peron'))
     test_model('lstm_gru', model, x_train, y_train, x_val, y_val)
-    
+
     '''
     model = single_lstm(embedding_matrix)
     test_model('single_lstm', model, x_train, y_train, x_val, y_val)
