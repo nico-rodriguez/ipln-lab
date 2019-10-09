@@ -13,6 +13,14 @@ El archivo `requirements.txt` contiene una lista de las dependencias del proyect
 pip3 install -r requirements.txt
 ```
 
+Las dependencias principales son:
+
+1. matplotlib==3.0.3
+2. numpy==1.17.2
+3. pandas==0.25.1
+4. scikit-learn==0.21.3
+5. tensorflow==2.0.0
+
 ### Instancias
 
 Se requiere de tres archivos, llamados `humor_train.csv`, `humor_val.csv` y `humor_test.csv`, necesarios para entrenar y evaluar el clasificador. Estos archivos deben encontrarse en un mismo directorio, que será pasado por parámetro al módulo principal `es_humor.py`.
