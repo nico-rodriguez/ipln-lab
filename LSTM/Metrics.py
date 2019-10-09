@@ -1,8 +1,8 @@
 import numpy as np
-from keras.callbacks import Callback
+from tensorflow import keras
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 
-class Metrics(Callback):
+class Metrics(keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
         self.val_f1s = []
         self.val_recalls = []
