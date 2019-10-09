@@ -128,7 +128,7 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
         else:
             list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else 0, word_list)))    # save index 0 for unknown words
 
-    max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
+    max_len = 40    # on humor_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
     y = df['humor'].tolist()
     print('{texts_num} texts processed'.format(texts_num=len(x)))
@@ -140,9 +140,9 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
 For debugging
 """
 def test():
-    DATA_TEST = '../corpus/data_test.csv'
-    DATA_TRAIN = '../corpus/data_train.csv'
-    DATA_VAL = '../corpus/data_val.csv'
+    DATA_TEST = '../corpus/humor_test.csv'
+    DATA_TRAIN = '../corpus/humor_train.csv'
+    DATA_VAL = '../corpus/humor_val.csv'
     WORD_EMBEDDINGS = '../word_embedding/intropln2019_embeddings_es_300.txt'
     
 
@@ -173,11 +173,11 @@ def test():
     assert len(embeddings_idx) == len(words_idx)
     print("--- %s seconds ---" % (time.time() - start_time))
 
-    print('Test parse_corpus on data_test.csv')
+    print('Test parse_corpus on humor_test.csv')
     parse_corpus(DATA_TEST, words_idx)
-    print('Test parse_corpus on data_val.csv')
+    print('Test parse_corpus on humor_val.csv')
     parse_corpus(DATA_VAL, words_idx)
-    print('Test parse_corpus on data_train.csv')
+    print('Test parse_corpus on humor_train.csv')
     x_train, y_train, word_index_train = parse_corpus(DATA_TRAIN, words_idx)
 
     print('Test embedding_matrix')

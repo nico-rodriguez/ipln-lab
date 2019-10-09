@@ -152,8 +152,8 @@ if __name__ == '__main__':
     #../word_embedding/intropln2019_embeddings_es_300.txt
     #../word_embedding/SBW-vectors-300-min5.txt
     WORD_EMBEDDINGS_FILENAME = '../word_embedding/intropln2019_embeddings_es_300.txt'
-    DATA_TRAIN = '../corpus/data_train.csv'
-    DATA_VAL = '../corpus/data_val.csv'
+    DATA_TRAIN = '../corpus/humor_train.csv'
+    DATA_VAL = '../corpus/humor_val.csv'
 
     # Set tensorflow verbosity
     set_verbosity(ERROR)

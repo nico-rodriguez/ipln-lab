@@ -1,5 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
+import classifier
 import os.path
 import sys
 
@@ -12,8 +13,17 @@ def get_command_line_parameters(cmd_args):
     if len(cmd_args) < 2:
         sys.exit(error_msg_head + ' Cantidad insuficiente de argumentos.')
 
-    # Check data path
-    data_path = cmd_args[1]
+    train_filename, val_filename, test_filename = check_data_path(cmd_args[1])
+
+    test_file_list, out_file_list = check_test_files(cmd_args[2:])
+
+    return train_filename, val_filename, test_filename, test_file_list, out_file_list
+
+
+def check_data_path(data_path):
+    fun_name = 'check_data_path'
+    error_msg_head = module_name + ' (' + fun_name + '): '
+
     if data_path[-1] != '/':
         data_path += '/'
     if os.path.isdir(data_path):
@@ -22,43 +32,41 @@ def get_command_line_parameters(cmd_args):
         test_filename = data_path + 'humor_test.csv'
         # Check train, val and test files
         if not os.path.isfile(train_filename):
-            sys.exit(error_msg_head + ' No se encontró el archivo de entrenamiento ' +
-                     train_filename)
-
+            sys.exit(error_msg_head + ' No se encontró el archivo de entrenamiento ' + train_filename)
         if not os.path.isfile(val_filename):
-            sys.exit(error_msg_head + ' No se encontró el archivo de validación ' +
-                     val_filename)
+            sys.exit(error_msg_head + ' No se encontró el archivo de validación ' + val_filename)
         if not os.path.isfile(test_filename):
-            sys.exit(error_msg_head + ' No se encontró el archivo de testing ' +
-                     test_filename)
+            sys.exit(error_msg_head + ' No se encontró el archivo de testing ' + test_filename)
+    return train_filename, val_filename, test_filename
 
-    # Check test and out files list
+
+def check_test_files(test_files_list):
+    fun_name = 'check_test_files'
+    error_msg_head = module_name + ' (' + fun_name + '): '
+
     test_file_list = []
     out_file_list = []
-    for i in range(2, len(cmd_args)):
-        test_file = cmd_args[i]
+    for test_file in test_files_list:
         if not os.path.isfile(test_file):
-            sys.exit(error_msg_head + ' No se encontró el archivo de test ' +
-                     test_file)
+            sys.exit(error_msg_head + ' No se encontró el archivo de test ' + test_file)
         filename, extension = os.path.splitext(test_file)
         if extension != '.csv':
-            sys.exit(error_msg_head + ' El archivo de test no tiene extensión .csv' +
-                     test_file)
+            sys.exit(error_msg_head + ' El archivo de test no tiene extensión .csv' + test_file)
         test_file_list.append(test_file)
         out_file_list.append(filename + '.out')
-
-    return train_filename, val_filename, test_filename, test_file_list, out_file_list
+    return test_file_list, out_file_list
 
 
 def main():
     cmd_args = sys.argv
-    train_filename, val_filename, test_filename, test_file_list, out_file_list = get_command_line_parameters(
-        cmd_args)
+    train_filename, val_filename, test_filename, test_file_list, out_file_list = get_command_line_parameters(cmd_args)
     # Debugging
-    print(train_filename, val_filename, test_filename,
-          test_file_list, out_file_list)
+    print(train_filename, val_filename, test_filename, test_file_list, out_file_list)
 
-    # TODO: levantar los valores de los hiperparámetros
+    # TODO: preprocesar datos (archivos en data_path y archivos de test)
+    # TODO: levantar los valores de los hiperparámetros (harcodearlos en el clasificador?)
+    model = classifier.compile_classifier()
+    print(model)
     # TODO: entrenar el clasificador con el archivo humor_train.csv
     # TODO: evaluar el clasificador en el archivo humor_test.csv y guardar la salida en test.out
     # TODO: evaluar el clasificador en los archivos test_file1.csv ... test_fileN.csv y guardar las salidas
