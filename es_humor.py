@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 import classifier
-import os.path
+import file_utils
+from numpy.random import seed
+import parser
 import sys
 
+seed(1)
 module_name = 'es_humor.py'
 
 
@@ -13,64 +16,38 @@ def get_command_line_parameters(cmd_args):
     if len(cmd_args) < 2:
         sys.exit(error_msg_head + ' Cantidad insuficiente de argumentos.')
 
-    train_filename, val_filename, test_filename = check_data_path(cmd_args[1])
+    train_filename, val_filename, test_filename = file_utils.check_data_path(cmd_args[1])
 
-    test_file_list, out_file_list = check_test_files(cmd_args[2:])
+    test_file_list, out_file_list = file_utils.check_test_files(cmd_args[2:])
 
     return train_filename, val_filename, test_filename, test_file_list, out_file_list
-
-
-def check_data_path(data_path):
-    fun_name = 'check_data_path'
-    error_msg_head = module_name + ' (' + fun_name + '): '
-
-    if data_path[-1] != '/':
-        data_path += '/'
-    if os.path.isdir(data_path):
-        train_filename = data_path + 'humor_train.csv'
-        val_filename = data_path + 'humor_val.csv'
-        test_filename = data_path + 'humor_test.csv'
-        # Check train, val and test files
-        if not os.path.isfile(train_filename):
-            sys.exit(error_msg_head + ' No se encontró el archivo de entrenamiento ' + train_filename)
-        if not os.path.isfile(val_filename):
-            sys.exit(error_msg_head + ' No se encontró el archivo de validación ' + val_filename)
-        if not os.path.isfile(test_filename):
-            sys.exit(error_msg_head + ' No se encontró el archivo de testing ' + test_filename)
-    return train_filename, val_filename, test_filename
-
-
-def check_test_files(test_files_list):
-    fun_name = 'check_test_files'
-    error_msg_head = module_name + ' (' + fun_name + '): '
-
-    test_file_list = []
-    out_file_list = []
-    for test_file in test_files_list:
-        if not os.path.isfile(test_file):
-            sys.exit(error_msg_head + ' No se encontró el archivo de test ' + test_file)
-        filename, extension = os.path.splitext(test_file)
-        if extension != '.csv':
-            sys.exit(error_msg_head + ' El archivo de test no tiene extensión .csv' + test_file)
-        test_file_list.append(test_file)
-        out_file_list.append(filename + '.out')
-    return test_file_list, out_file_list
 
 
 def main():
     cmd_args = sys.argv
     train_filename, val_filename, test_filename, test_file_list, out_file_list = get_command_line_parameters(cmd_args)
-    # Debugging
-    print(train_filename, val_filename, test_filename, test_file_list, out_file_list)
 
-    # TODO: preprocesar datos (archivos en data_path y archivos de test)
-    # TODO: levantar los valores de los hiperparámetros (harcodearlos en el clasificador?)
+    # Load and preprocess training and validation data
+    x_train_texts, y_train = parser.load_data(train_filename)
+    x_val_texts, y_val = parser.load_data(val_filename)
+    x_train = parser.preprocess_data(x_train_texts)
+    x_val = parser.preprocess_data(x_val_texts)
+    # Load classifier
     model = classifier.compile_classifier()
-    print(model)
-    # TODO: entrenar el clasificador con el archivo humor_train.csv
-    # TODO: evaluar el clasificador en el archivo humor_test.csv y guardar la salida en test.out
-    # TODO: evaluar el clasificador en los archivos test_file1.csv ... test_fileN.csv y guardar las salidas
-    # en test_file1.out ... test_fileN.out
+    # Train classfier on humor_train.csv
+    classifier.train_model(model, x_train, y_train, x_val, y_val)
+    # Evaluate classifier on humor_test.csv
+    x_test_texts, y_test = parser.load_data(test_filename)
+    x_test = parser.preprocess_data(x_test_texts)
+    classifier.evaluate_model(model, x_test, y_test)
+    # Test classifier on test_file1.csv,...,test_fileN.csv and save predictions on test_file1.out,...,test_fileN.out
+    for i in range(len(test_file_list)):
+        test_file = test_file_list[i]
+        out_file = out_file_list[i]
+        x_test_texts, y_test = parser.load_data(test_file)
+        x_test = parser.preprocess_data(x_test_texts)
+        y_out = classifier.test_model(model, x_test)
+        file_utils.save_array(y_out, out_file)
 
 
 if __name__ == '__main__':
