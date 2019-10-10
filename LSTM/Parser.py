@@ -12,6 +12,9 @@ import time
 import csv
 import nltk
 from difflib import get_close_matches
+import spacy
+from nltk.corpus import stopwords
+import demoji
 
 """
 *** Parsing functions for the word embeddings ***
@@ -93,13 +96,21 @@ def conditional_lowercase(word):
     else:
         return word
 
+def removeNonAscii(s): 
+    return "".join(i for i in s if ord(i)<174)
+
 def clean_tweet(tweet):
     tweet = re.sub('http\S+\s*', '', tweet)  # remove URLs
     tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
     tweet = re.sub('#\S+', '', tweet)  # remove hashtags
     tweet = re.sub('@\S+', '', tweet)  # remove mentions
-    tweet = re.sub('[%s]' % re.escape(""""#$%&'()*+,/:;<=>@[\]^_`{|}~"""), '', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
-    tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespace
+    tweet = re.sub('[%s]' % re.escape(""""#$%&'()*+,/;<=>@[\]^_`{|}çà~"""), ' ', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
+    tweet = re.sub('[0-9]+', ' ', tweet)
+    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝìʇʌɹòäêëʺ"""), ' ', tweet)
+    tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespaces
+    tweet = re.sub(r'[ا-ي]',' ',tweet)
+    tweet = removeNonAscii(tweet)
+    demoji.replace(tweet)
     return tweet
 
 def pre_process_tweets(tweets):
@@ -107,16 +118,24 @@ def pre_process_tweets(tweets):
     clean_list = list(map(clean_tweet, clean_list))
     return ' '.join(clean_list)
 
-def try_recover_word(word, word_index, words_embeddings_array):
-    matches = get_close_matches(word, words_embeddings_array)
+#def lemmatize_word(word)
+
+def try_recover_word(word, word_index, words_embeddings_array, nlp):
+    matches = get_close_matches(word, words_embeddings_array, 3, 0.8)
+    nlp_match = nlp(word)
     if len(matches) is 0:
+        print("-------")
+        print(word)
+        print("unable to match")
+        print("-------")
         return -1, False
     else:
+        #print(matches[0])
         first = matches[0]
         index = word_index[first]
         return index, True
 
-def process_word_list(word_list, word_index, words_embeddings_array):
+def process_word_list(word_list, word_index, words_embeddings_array, nlp):
     result_word_list = []
     match_count = 0
     count = 0
@@ -125,7 +144,7 @@ def process_word_list(word_list, word_index, words_embeddings_array):
             match_count += 1
             result_word_list.append(word_index[word])
         else: #fijarse si la pudo recuperar
-            new_word, recovered = try_recover_word(word, word_index, words_embeddings_array)
+            new_word, recovered = try_recover_word(word, word_index, words_embeddings_array, nlp)
             result_word_list.append(new_word)
             if recovered:
                 match_count += 1
@@ -152,6 +171,9 @@ def parse_corpus(corpus_filename, word_index, embeddings_index, max_features=355
     tokenizer.fit_on_texts(texts_list)
     # list_tokenized_texts = tokenizer.texts_to_sequences(texts_list)
 
+    stopwordss = stopwords.words('spanish')
+    #filtered_words = [word for word in word_list if word not in stopwords]
+    
     words_embeddings_array = sorted_dict_keys(word_index)
     match_count=0
     max_count=0
@@ -160,11 +182,13 @@ def parse_corpus(corpus_filename, word_index, embeddings_index, max_features=355
     with open('corpusss.csv', 'w', newline='', encoding="utf-8") as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
         wr.writerow(texts_list)
+    
+    nlp = spacy.load('es_core_news_sm')  # same behaviour with spacy.blank('es')
 
     list_tokenized_texts = []
     for i in range(len(texts_list)):
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
-        processed_word_list, match, count = process_word_list(word_list, word_index, words_embeddings_array)
+        processed_word_list, match, count = process_word_list(word_list, word_index, words_embeddings_array, nlp)
         list_tokenized_texts.append(processed_word_list)
         match_count += match
         max_count += count
