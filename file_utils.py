@@ -17,6 +17,7 @@ def check_data_path(data_path):
         train_filename = data_path + 'humor_train.csv'
         val_filename = data_path + 'humor_val.csv'
         test_filename = data_path + 'humor_test.csv'
+        embedding_filename = data_path + 'intropln2019_embeddings_es_300.txt'
         # Check train, val and test files
         if not os.path.isfile(train_filename):
             sys.exit(error_msg_head + ' No se encontró el archivo de entrenamiento ' + train_filename)
@@ -24,7 +25,9 @@ def check_data_path(data_path):
             sys.exit(error_msg_head + ' No se encontró el archivo de validación ' + val_filename)
         if not os.path.isfile(test_filename):
             sys.exit(error_msg_head + ' No se encontró el archivo de testing ' + test_filename)
-    return train_filename, val_filename, test_filename
+        if not os.path.isfile(embedding_filename):
+            sys.exit(error_msg_head + ' No se encontró el archivo de testing ' + embedding_filename)
+    return train_filename, val_filename, test_filename, embedding_filename
 
 
 def check_test_files(test_files_list):
