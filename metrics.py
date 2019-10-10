@@ -5,6 +5,9 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 
 
 class Metrics(tf.keras.callbacks.Callback):
+    def __init__(self, x_val, y_val):
+        self.validation_data = (x_val, y_val)
+
     def on_train_begin(self, logs={}):
         self.val_f1s = []
         self.val_recalls = []
@@ -12,7 +15,7 @@ class Metrics(tf.keras.callbacks.Callback):
         self.epoch = 0
 
     def on_epoch_end(self, epoch, logs={}):
-        val_predict = np.asarray(self.model.predict_classes(self.validation_data[0], batch_size=BATCH_SIZE))
+        val_predict = np.asarray(self.model.predict_classes(self.validation_data[0])).flatten()
         val_targ = self.validation_data[1]
         _val_f1 = f1_score(val_targ, val_predict)
         _val_precision = precision_score(val_targ, val_predict)
