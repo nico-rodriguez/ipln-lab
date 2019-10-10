@@ -44,7 +44,7 @@ def main():
     classifier.train_model(model, x_train, y_train, x_val, y_val)
     # Evaluate classifier on humor_test.csv
     x_test_texts, y_test = parser.load_data(test_filename)
-    x_test = parser.preprocess_data(x_test_texts)
+    x_test, _ = parser.preprocess_data(x_test_texts)
     classifier.evaluate_model(model, x_test, y_test)
     # Test classifier on test_file1.csv,...,test_fileN.csv and save predictions on test_file1.out,...,test_fileN.out
     for i in range(len(test_file_list)):
