@@ -11,7 +11,8 @@ def compile_classifier(embedding_matrix):
     print('Compilando clasificador...')
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1],
-                                        input_length=MAX_WORDS_PER_TWEET, weights=[embedding_matrix], trainable=False))
+                                        input_length=MAX_WORDS_PER_TWEET, weights=[embedding_matrix], trainable=False,
+                                        mask_zero=True))
     model.add(tf.keras.layers.GRU(units=TOTAL_UNITS, dropout=0.2, recurrent_dropout=0.2,
                                   kernel_initializer='glorot_uniform', activation='softsign'))
     model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
