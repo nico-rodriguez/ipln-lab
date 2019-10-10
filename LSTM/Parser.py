@@ -96,9 +96,6 @@ def conditional_lowercase(word):
     else:
         return word
 
-def removeNonAscii(s): 
-    return "".join(i for i in s if ord(i)<174)
-
 def clean_tweet(tweet):
     tweet = re.sub('http\S+\s*', '', tweet)  # remove URLs
     tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
@@ -109,7 +106,7 @@ def clean_tweet(tweet):
     tweet = re.sub('[%s]' % re.escape(""""öńùüèǝìʇʌɹòäêëʺ"""), ' ', tweet)
     tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespaces
     tweet = re.sub(r'[ا-ي]',' ',tweet)
-    tweet = removeNonAscii(tweet)
+    tweet = re.sub(r'—','-',tweet)
     demoji.replace(tweet)
     return tweet
 
