@@ -17,6 +17,7 @@ def compile_classifier(embedding_matrix):
                                   kernel_initializer='glorot_uniform', activation='softsign'))
     model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    print(model.summary())
     return model
 
 
