@@ -5,9 +5,12 @@ import file_utils
 from numpy.random import seed
 import parser
 import sys
+import tensorflow as tf
 
+tf.random.set_seed(1)
 seed(1)
 module_name = 'es_humor.py'
+# os.environ['TF_XLA_FLAGS'] = '--tf_xla_cpu_global_jit'
 
 
 def get_command_line_parameters(cmd_args):
@@ -16,24 +19,27 @@ def get_command_line_parameters(cmd_args):
     if len(cmd_args) < 2:
         sys.exit(error_msg_head + ' Cantidad insuficiente de argumentos.')
 
-    train_filename, val_filename, test_filename = file_utils.check_data_path(cmd_args[1])
+    train_filename, val_filename, test_filename, embedding_filename = file_utils.check_data_path(cmd_args[1])
 
     test_file_list, out_file_list = file_utils.check_test_files(cmd_args[2:])
 
-    return train_filename, val_filename, test_filename, test_file_list, out_file_list
+    return train_filename, val_filename, test_filename, embedding_filename, test_file_list, out_file_list
 
 
 def main():
     cmd_args = sys.argv
-    train_filename, val_filename, test_filename, test_file_list, out_file_list = get_command_line_parameters(cmd_args)
+    train_filename, val_filename, test_filename, embedding_filename,\
+        test_file_list, out_file_list = get_command_line_parameters(cmd_args)
 
     # Load and preprocess training and validation data
     x_train_texts, y_train = parser.load_data(train_filename)
     x_val_texts, y_val = parser.load_data(val_filename)
-    x_train = parser.preprocess_data(x_train_texts)
-    x_val = parser.preprocess_data(x_val_texts)
+    x_train, train_data_word_index = parser.preprocess_data(x_train_texts)
+    x_val, _ = parser.preprocess_data(x_val_texts)
+    # Create embedding matrix
+    embedding_matrix = parser.embeddings_file2embeddings_matrix(embedding_filename, train_data_word_index)
     # Load classifier
-    model = classifier.compile_classifier()
+    model = classifier.compile_classifier(embedding_matrix)
     # Train classfier on humor_train.csv
     classifier.train_model(model, x_train, y_train, x_val, y_val)
     # Evaluate classifier on humor_test.csv
