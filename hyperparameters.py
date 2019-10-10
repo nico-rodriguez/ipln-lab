@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
 
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 3
+MAX_WORDS_PER_TWEET = 19
+TOTAL_UNITS = 30
