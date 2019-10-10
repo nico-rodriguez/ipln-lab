@@ -24,9 +24,9 @@ def preprocess_data(texts_list):
     tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=35569, filters='\n\t.:()-', lower=False, split=' ',
                                                       char_level=False, oov_token='<UNK>')
     tokenizer.fit_on_texts(texts_list)
-    x_train = tokenizer.texts_to_sequences(texts_list)
-    x_train = tf.keras.preprocessing.sequence.pad_sequences(x_train, maxlen=MAX_WORDS_PER_TWEET)
-    return np.array(x_train), tokenizer.word_index
+    indexes_list = tokenizer.texts_to_sequences(texts_list)
+    indexes_list = tf.keras.preprocessing.sequence.pad_sequences(indexes_list, maxlen=MAX_WORDS_PER_TWEET)
+    return np.array(indexes_list), tokenizer.word_index
 
 
 def embeddings_file2embeddings_matrix(embeddings_filename, word_index):
