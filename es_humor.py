@@ -51,9 +51,10 @@ def main():
         test_file = test_file_list[i]
         out_file = out_file_list[i]
         x_test_texts, y_test = parser.load_data(test_file)
-        x_test = parser.preprocess_data(x_test_texts)
+        x_test, _ = parser.preprocess_data(x_test_texts)
         y_out = classifier.test_model(model, x_test)
         file_utils.save_array(y_out, out_file)
+        print('Resulados guardados en {filename}'.format(filename=out_file))
 
 
 if __name__ == '__main__':
