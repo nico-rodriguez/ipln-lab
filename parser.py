@@ -18,15 +18,16 @@ def _space_non_alphanumeric(text):
     return r.sub(r' \1 ', text)
 
 
-def preprocess_data(texts_list):
+def preprocess_data(texts_list, tokenizer=None):
     print('Pre procesando textos...')
     texts_list = list(map(lambda x: _space_non_alphanumeric(x), texts_list))
-    tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=35569, filters='\n\t.:()-', lower=False, split=' ',
-                                                      char_level=False, oov_token='<UNK>')
-    tokenizer.fit_on_texts(texts_list)
+    if tokenizer is None:
+        tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=35569, filters='\n\t.:()-', lower=False, split=' ',
+                                                          char_level=False, oov_token='<UNK>')
+        tokenizer.fit_on_texts(texts_list)
     indexes_list = tokenizer.texts_to_sequences(texts_list)
     indexes_list = tf.keras.preprocessing.sequence.pad_sequences(indexes_list, maxlen=MAX_WORDS_PER_TWEET)
-    return np.array(indexes_list), tokenizer.word_index
+    return np.array(indexes_list), tokenizer
 
 
 def embeddings_file2embeddings_matrix(embeddings_filename, word_index):
