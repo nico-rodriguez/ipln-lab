@@ -23,10 +23,10 @@ def compile_classifier(embedding_matrix):
 
 def train_model(model, x_train, y_train, x_val, y_val):
     print('Entrenando modelo...')
-    # metrics = Metrics(x_val, y_val)
+    metrics = Metrics(x_val, y_val)
     start_time = time.time()
     model.fit(x_train, y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, workers=2, use_multiprocessing=True,
-              validation_freq=1, validation_data=(x_val, y_val), verbose=1)
+              validation_freq=1, validation_data=(x_val, y_val), callbacks=[metrics], verbose=1)
     end_time = time.time()
     print('Entrenamiento finalizado en ({min} minutos)'.format(min=(end_time - start_time) / 60))
 
