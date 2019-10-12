@@ -34,25 +34,24 @@ def main():
     # Load and preprocess training and validation data
     x_train_texts, y_train = parser.load_data(train_filename)
     x_val_texts, y_val = parser.load_data(val_filename)
-    x_train, train_tokenizer = parser.preprocess_data(x_train_texts)
-    train_data_word_index = train_tokenizer.word_index
-    x_val, _ = parser.preprocess_data(x_val_texts, train_tokenizer)
     # Create embedding matrix
-    embedding_matrix = parser.embeddings_file2embeddings_matrix(embedding_filename, train_data_word_index)
+    embedding_matrix, tokenizer = parser.embeddings_file2embeddings_matrix(embedding_filename)
+    x_train = parser.preprocess_data(x_train_texts, tokenizer)
+    x_val = parser.preprocess_data(x_val_texts, tokenizer)
     # Load classifier
     model = classifier.compile_classifier(embedding_matrix)
     # Train classfier on humor_train.csv
     classifier.train_model(model, x_train, y_train, x_val, y_val)
     # Evaluate classifier on humor_test.csv
     x_test_texts, y_test = parser.load_data(test_filename)
-    x_test, _ = parser.preprocess_data(x_test_texts, train_tokenizer)
+    x_test = parser.preprocess_data(x_test_texts, tokenizer)
     classifier.evaluate_model(model, x_test, y_test)
     # Test classifier on test_file1.csv,...,test_fileN.csv and save predictions on test_file1.out,...,test_fileN.out
     for i in range(len(test_file_list)):
         test_file = test_file_list[i]
         out_file = out_file_list[i]
         x_test_texts, y_test = parser.load_data(test_file)
-        x_test, _ = parser.preprocess_data(x_test_texts, train_tokenizer)
+        x_test = parser.preprocess_data(x_test_texts, tokenizer)
         y_out = classifier.test_model(model, x_test)
         file_utils.save_array(y_out, out_file)
         print('Resulados guardados en {filename}'.format(filename=out_file))
