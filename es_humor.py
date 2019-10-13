@@ -31,11 +31,12 @@ def main():
     train_filename, val_filename, test_filename, embedding_filename,\
         test_file_list, out_file_list = get_command_line_parameters(cmd_args)
 
-    # Load and preprocess training and validation data
-    x_train_texts, y_train = parser.load_data(train_filename)
-    x_val_texts, y_val = parser.load_data(val_filename)
     # Create embedding matrix
     embedding_matrix, tokenizer = parser.embeddings_file2embeddings_matrix(embedding_filename)
+    # Load training and validation data
+    x_train_texts, y_train = parser.load_data(train_filename)
+    x_val_texts, y_val = parser.load_data(val_filename)
+    # Preprocess training and validation data
     x_train = parser.preprocess_data(x_train_texts, tokenizer)
     x_val = parser.preprocess_data(x_val_texts, tokenizer)
     # Load classifier
