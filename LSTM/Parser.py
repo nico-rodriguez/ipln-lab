@@ -101,12 +101,12 @@ def clean_tweet(tweet):
     tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
     tweet = re.sub('#\S+', '', tweet)  # remove hashtags
     tweet = re.sub('@\S+', '', tweet)  # remove mentions
-    tweet = re.sub('[%s]' % re.escape(""""#$%&'()*+,/;<=>@[\]^_`{|}çà~"""), ' ', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
+    tweet = re.sub('[%s]' % re.escape(""""#'()*+;<=>@[\]^_`{|}~"""), ' ', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
     tweet = re.sub('[0-9]+', ' ', tweet)
-    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝìʇʌɹòäêëʺ"""), ' ', tweet)
+    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝìʇʌɹòäê¾¾ë½ıª¼ôçàʺ"""), ' ', tweet)
     tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespaces
-    tweet = re.sub(r'[ا-ي]',' ',tweet)
     tweet = re.sub(r'—','-',tweet)
+    tweet = re.sub('[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]',' ', tweet) 
     demoji.replace(tweet)
     return tweet
 
@@ -127,7 +127,6 @@ def try_recover_word(word, word_index, words_embeddings_array, nlp):
         print("-------")
         return -1, False
     else:
-        #print(matches[0])
         first = matches[0]
         index = word_index[first]
         return index, True
