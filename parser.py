@@ -5,6 +5,7 @@ from hyperparameters import *
 import numpy as np
 import pandas as pd
 import re
+import stopwords
 import tensorflow as tf
 
 
@@ -17,6 +18,12 @@ def load_data(data_filename):
 def _space_non_alphanumeric(text):
     r = re.compile('([^a-zA-Z0-9ñÍÓÚÉÁ \t\n\r\f\váéíóú])')
     return r.sub(r' \1 ', text)
+
+
+def _remove_stop_words(text):
+    text_words = text.split(' ')
+    text_words = list(filter(lambda w: w not in stopwords.stopwords_dict, text_words))
+    return ' '.join(text_words)
 
 
 def _get_word_embeddings(embeddings_filename):
@@ -68,12 +75,7 @@ def embeddings_file2embeddings_matrix(embeddings_filename):
 def preprocess_data(texts_list, tokenizer):
     print('Pre procesando textos...')
     texts_list = list(map(lambda x: _space_non_alphanumeric(x), texts_list))
-    # remove stop words?
+    texts_list = list(map(lambda x: _remove_stop_words(x), texts_list))
     indexes_list = tokenizer.texts_to_sequences(texts_list)
-
-    indexes_list = list(map(lambda index_list: (list(filter(lambda index: index != 1, index_list))), indexes_list))
-    for index_list in indexes_list:
-        assert 1 not in index_list
-
     indexes_list = tf.keras.preprocessing.sequence.pad_sequences(indexes_list, maxlen=MAX_WORDS_PER_TWEET)
     return np.array(indexes_list)

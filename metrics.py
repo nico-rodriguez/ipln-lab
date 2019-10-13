@@ -1,4 +1,3 @@
-# from keras.callbacks import Callback
 import tensorflow as tf
 import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
