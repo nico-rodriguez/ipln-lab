@@ -12,6 +12,7 @@ import time
 import csv
 import nltk
 from operator import itemgetter
+from nltk.corpus import stopwords
 """
 *** Parsing functions for the word embeddings ***
 """
@@ -110,6 +111,8 @@ def space_non_alphanumeric(text):
     return r.sub(r' \1 ', text)
 
 def remove_stop_words(text):
+    stop_words = stopwords.words('spanish')
+    '''
     stop_words = {'0': '0',
     '1': '0',
     '2': '0',
@@ -842,6 +845,7 @@ def remove_stop_words(text):
     'últimas': '0',
     'último': '0',
     'últimos':'0'}
+    '''
     if text in stop_words:
         return None
     else:
@@ -900,7 +904,7 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
         else:
             list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else 0, word_list)))    # save index 0 for unknown words
 
-    max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
+    max_len = 30    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
     y = df['humor'].tolist()
     print('{texts_num} texts processed'.format(texts_num=len(x)))

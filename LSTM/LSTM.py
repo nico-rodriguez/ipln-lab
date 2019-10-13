@@ -8,6 +8,12 @@ from tensorflow.logging import set_verbosity
 from Metrics import Metrics
 import Parser
 
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import GridSearchCV
+
+
+embedding_matrix = []
+
 
 def single_lstm(embedding_matrix):
     units = 30
@@ -38,7 +44,7 @@ def triple_lstm(embedding_matrix):
 def bidirectional_lstm(embedding_matrix):
     units = 30
     model = Sequential()
-    model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=40,
+    model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=25,
                         weights=[embedding_matrix], trainable=True))
     model.add(Bidirectional(LSTM(units=units//2, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
                                  return_sequences=True, activation='softsign')))
@@ -48,15 +54,17 @@ def bidirectional_lstm(embedding_matrix):
     return model
 
 
-def lstm_gru(embedding_matrix):
+def lstm_gru(dropout=0.1, recurrent_dropout=0.1, kernel_initializer='glorot_uniform', activation = 'relu', optimizer='adam', init_mode='uniform'):
     units = 30
     model = Sequential()
-    model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=40,
-                        weights=[embedding_matrix], trainable=True))
-    model.add(LSTM(units=units//2, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
-                   activation='softsign', return_sequences=True))
-    model.add(GRU(units=units//2, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
-                  activation='relu'))
+    model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=30,
+                        weights=[embedding_matrix], trainable=False, mask_zero=True))
+    #model.add(LSTM(units=units, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
+    #              activation='softsign', return_sequences=True))
+    #model.add(GRU(units=units//2, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
+    #              activation='relu', return_sequences = True))
+    model.add(GRU(units=units, dropout=dropout, recurrent_dropout=recurrent_dropout, kernel_initializer='glorot_uniform',
+                  activation=activation))
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
@@ -101,7 +109,7 @@ def parallel_bidirectional_lstm_lstm_gru(embedding_matrix):
     units = 30
     inputs = Input(shape=(40,))
     embedding = Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=40,
-                          weights=[embedding_matrix], trainable=True)(inputs)
+                          weights=[embedding_matrix], trainable=False, mask_zero=True)(inputs)
     bi_lstm_1 = Bidirectional(LSTM(units=units//4, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
                                    return_sequences=True, activation='softsign'))(embedding)
     bi_lstm_2 = Bidirectional(LSTM(units=units//4))(bi_lstm_1)
@@ -121,7 +129,7 @@ def parallel_bidirectional_lstm_lstm_gru(embedding_matrix):
 def test_model(model_name, model, x_train, y_train, x_val, y_val):
     #plot_model(model, to_file=model_name+'_model.png', expand_nested=True)
     batch_size = 32
-    epochs = 1
+    epochs = 20
     csv_logger = CSVLogger(model_name+'_training.log')
     metrics = Metrics()
     metrics.set_file_name(model_name+'_metrics.log')
@@ -160,21 +168,41 @@ if __name__ == '__main__':
 
     max_features = 35569
     vector_size = 300
-    #remove_unknown_words = True
-    remove_unknown_words = False
-    #perform_clean_up = False
-    perform_clean_up = True
+    remove_unknown_words = True
+    #remove_unknown_words = False
+    perform_clean_up = False
+    #perform_clean_up = True
 
     embeddings_index = Parser.embeddings_index(WORD_EMBEDDINGS_FILENAME)
     word_index = Parser.word_index(embeddings_index, remove_unknown_words)
+    #global embedding_matrix
     embedding_matrix = Parser.embedding_matrix(embeddings_index, word_index, vector_size, remove_unknown_words)
 
     x_train, y_train, _ = Parser.parse_corpus(DATA_TRAIN, word_index, max_features, remove_unknown_words, perform_clean_up)
     x_val, y_val, _ = Parser.parse_corpus(DATA_VAL, word_index, max_features, remove_unknown_words, perform_clean_up)
 
 
-    model = lstm_gru(embedding_matrix)
-    model.summary()
+    model = KerasClassifier(build_fn=lstm_gru, epochs=100, batch_size=10, verbose=0)
+    #model.summary()
+
+    optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
+    activation = ['relu', 'elu', 'selu']
+    #init_mode = ['uniform', 'lecun_uniform', 'normal', 'zero', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']
+    #param_grid = dict(optimizer=optimizer, activation=activation)
+    #grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1, cv=3)
+    #grid_result = grid.fit(x_val, y_val)
+    #print(grid_result.best_params_, grid_result.best_score_)
+
+
+    optimizer.append('softmax')
+    init_mode = ['uniform', 'normal' ] #'lecun_uniform'] #, 'normal']
+    param_grid = dict(optimizer=optimizer, activation=activation, init_mode=init_mode)
+    grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1, cv=3)
+    grid_result = grid.fit(x_val, y_val)
+    print(grid_result.best_params_, grid_result.best_score_)
+
+
+
 
 
     #print(model_sg.wv.most_similar_cosmul('peron'))
