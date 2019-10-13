@@ -13,10 +13,10 @@ def compile_classifier(embedding_matrix):
     model.add(tf.keras.layers.Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1],
                                         input_length=MAX_WORDS_PER_TWEET, weights=[embedding_matrix], trainable=False,
                                         mask_zero=True))
-    model.add(tf.keras.layers.GRU(units=TOTAL_UNITS, dropout=0.2, recurrent_dropout=0.2,
-                                  kernel_initializer='glorot_uniform', activation='softsign'))
+    model.add(tf.keras.layers.GRU(units=TOTAL_UNITS, dropout=DROPOUT, recurrent_dropout=RECURRENT_DROPOUT,
+                                  kernel_initializer=KERNEL_INITIALIZER, activation=ACTIVATION))
     model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss=LOSS, optimizer=OPTIMIZER, metrics=['accuracy'])
     print(model.summary())
     return model
 
@@ -33,11 +33,11 @@ def train_model(model, x_train, y_train, x_val, y_val):
 
 def evaluate_model(model, x_test, y_test):
     print('Evaluando modelo...')
-    y_out = np.asarray(model.predict_classes(x_test)).flatten()
+    y_out = np.asarray(model.predict_classes(x_test, batch_size=BATCH_SIZE, verbose=1))
     # TODO: compare y_out with y_test
 
 
 def test_model(model, x_test):
     print('Testeando modelo...')
-    y_out = np.asarray(model(x_test))
+    y_out = np.asarray(model.predict_classes(x_test, batch_size=BATCH_SIZE, verbose=1))
     return y_out
