@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=red_neuronal_1
-#SBATCH --ntasks=1
+#SBATCH --ntasks=4
 #SBATCH --mem=16384
 #SBATCH --time=48:00:00
 #SBATCH --tmp=16G
@@ -11,5 +11,5 @@
 
 source /python_env/bin/activate
 
-cd AA/aa2019-lab5/ejercicio8
-python3 Training.py Training.conf
+cd ipln/ipln-lab/LSTM
+python3 LSTM.py
