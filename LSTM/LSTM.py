@@ -2,8 +2,6 @@ from keras.callbacks import CSVLogger
 from keras.layers import Bidirectional, average, Dense, Embedding, GRU, Input, LSTM
 from keras.models import Model, Sequential
 from keras.utils import plot_model
-from tensorflow.logging import ERROR
-from tensorflow.logging import set_verbosity
 #from matplotlib import pyplot
 from Metrics import Metrics
 import Parser
@@ -164,9 +162,6 @@ if __name__ == '__main__':
     WORD_EMBEDDINGS_FILENAME = '../word_embedding/intropln2019_embeddings_es_300.txt'
     DATA_TRAIN = '../corpus/data_train.csv'
     DATA_VAL = '../corpus/data_val.csv'
-
-    # Set tensorflow verbosity
-    set_verbosity(ERROR)
 
     max_features = 35569
     vector_size = 300

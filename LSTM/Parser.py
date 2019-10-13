@@ -15,6 +15,7 @@ from operator import itemgetter
 from nltk.corpus import stopwords
 import demoji
 from difflib import get_close_matches
+from nltk.stem import SnowballStemmer
 
 """
 *** Parsing functions for the word embeddings ***
@@ -48,7 +49,7 @@ def get_nearest(target, tokenizer, word_list_tmp):
             else:
                 return 0
 
-def try_recover_word(word, word_index, words_embeddings_array):
+def try_recover_word(word, word_index, words_embeddings_array, stemmer):
     matches = get_close_matches(word, words_embeddings_array, 3, 0.8)
     if len(matches) is 0:
         print("-------")
@@ -61,16 +62,17 @@ def try_recover_word(word, word_index, words_embeddings_array):
         index = word_index[first]
         return index, True
 
-def process_word_list(word_list, word_index, words_embeddings_array):
+def process_word_list(word_list, word_index, words_embeddings_array, stemmer):
     result_word_list = []
     match_count = 0
     count = 0
     for word in word_list:
-        if word in word_index:
+        index_matches = list(filter(lambda x: x != None,[word_index.get(word,None), word_index.get(word.lower(),None), word_index.get(stemmer.stem(word),None)]))
+        if len(index_matches) is not 0:
             match_count += 1
-            result_word_list.append(word_index[word])
+            result_word_list.append(index_matches[0])
         else: #fijarse si la pudo recuperar
-            new_word, recovered = try_recover_word(word, word_index, words_embeddings_array)
+            new_word, recovered = try_recover_word(word, word_index, words_embeddings_array, stemmer)
             result_word_list.append(new_word)
             if recovered:
                 match_count += 1
@@ -86,12 +88,15 @@ def sorted_dict_keys(dict):
 Parse the word embeddings file. Returns a dictionary that maps words to their respective word embedding vector.
 """
 def embeddings_index(word_embedding_filename):
+    stemmer = SnowballStemmer('spanish')
     print('Indexing word vectors...')
     embeddings_index = {}
     with open(word_embedding_filename, encoding="utf-8") as f:
         for line in f:
             word, coefs = line.split(maxsplit=1)
             coefs = np.fromstring(coefs, 'f', sep=' ')
+            embeddings_index[stemmer.stem(word)] = coefs
+            embeddings_index[word.lower()] = coefs
             embeddings_index[word] = coefs
     print('Found %s word vectors.' % len(embeddings_index))
     return embeddings_index
@@ -887,18 +892,35 @@ def remove_stop_words(text):
     else:
         return text
 
-def clean_tweet(tweet):
-    tweet = re.sub('http\S+\s*', '', tweet)  # remove URLs
-    tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
-    tweet = re.sub('#\S+', '', tweet)  # remove hashtags
-    tweet = re.sub('@\S+', '', tweet)  # remove mentions
+def only_symbols(tweet):
+    #tweet = re.sub('http\S+\s*', ' ', tweet)  # remove URLs
+    #tweet = re.sub('RT|cc', ' ', tweet)  # remove RT and cc
+    #tweet = re.sub('#\S+', ' ', tweet)  # remove hashtags
+    #tweet = re.sub('@\S+', ' ', tweet)  # remove mentions
     tweet = re.sub('[%s]' % re.escape(""""#;<=>@[\]^_`{|}~"""), ' ', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
-    tweet = re.sub('[0-9]+', ' ', tweet)
-    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝÑìʇʌɹòäê¾¾ë½ÖËıÇÈÌª¼ôçàʺ"""), ' ', tweet)
+    #tweet = re.sub('[0-9]+', ' ', tweet)
+    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝÑìʇʌɹòäê¾¾ë½ÄÖËıÇÔÈÜÌªÀ¼ôçàʺ"""), ' ', tweet)
     tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespaces
-    tweet = re.sub(r'—','-',tweet)
+    tweet = re.sub('—','-', tweet)
     tweet = re.sub('[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]',' ', tweet) 
+    tweet = re.sub('-','—', tweet)
+    #demoji.replace(tweet)
+    tweet = re.sub('[a-zA-Z0-9ñÍÓÚÉÁ \t\n\r\f\váéíóú]', ' ', tweet) 
     demoji.replace(tweet)
+    print(tweet)
+    return tweet
+
+def clean_tweet(tweet):
+    #tweet = re.sub('http\S+\s*', ' ', tweet)  # remove URLs
+    #tweet = re.sub('RT|cc', ' ', tweet)  # remove RT and cc
+    #tweet = re.sub('#\S+', ' ', tweet)  # remove hashtags
+    #tweet = re.sub('@\S+', ' ', tweet)  # remove mentions
+    tweet = re.sub('[%s]' % re.escape(""""#;<=>@[\]^_`{|}~"""), ' ', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
+    #tweet = re.sub('[0-9]+', ' ', tweet)
+    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝÑìʇʌɹòäê¾¾ë½ÄÖËıÇÔÈÜÌªÀ¼ôçàʺ"""), ' ', tweet)
+    tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespaces
+    tweet = re.sub('[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]',' ', tweet) 
+    #demoji.replace(tweet)
     return tweet
 
 
@@ -919,6 +941,7 @@ def parse_corpus(corpus_filename, word_index, embeddings_index, max_features=355
         texts_list = list(map(pre_process_tweets, texts_list))
     texts_list = list(map(space_non_alphanumeric, texts_list))
     tokenizer.fit_on_texts(texts_list)
+    stemmer = SnowballStemmer('spanish')
     
     words_index_array = sorted_dict_keys(word_index)
     match_count=0
@@ -932,7 +955,7 @@ def parse_corpus(corpus_filename, word_index, embeddings_index, max_features=355
     list_tokenized_texts = []
     for i in range(len(texts_list)):
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
-        processed_word_list, match, count = process_word_list(word_list, word_index, words_index_array)
+        processed_word_list, match, count = process_word_list(word_list, word_index, words_index_array, stemmer)
         list_tokenized_texts.append(processed_word_list)
         match_count += match
         max_count += count
