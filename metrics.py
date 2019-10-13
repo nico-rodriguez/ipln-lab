@@ -1,11 +1,12 @@
-from keras.callbacks import Callback
+# from keras.callbacks import Callback
+import tensorflow as tf
 import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 
-class Metrics(Callback):
-    # def __init__(self, x_val, y_val):
-    #     self.validation_data = (x_val, y_val)
+class Metrics(tf.keras.callbacks.Callback):
+    def __init__(self, x_val, y_val):
+        self.validation_data = (x_val, y_val)
 
     def on_train_begin(self, logs={}):
         self.val_f1s = []

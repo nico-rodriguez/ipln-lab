@@ -5,9 +5,9 @@ import file_utils
 from numpy.random import seed
 import parser
 import sys
+import tensorflow as tf
 
-
-# tf.random.set_seed(1)
+tf.random.set_random_seed(1)
 seed(1)
 module_name = 'es_humor.py'
 # os.environ['TF_XLA_FLAGS'] = '--tf_xla_cpu_global_jit'
@@ -31,27 +31,28 @@ def main():
     train_filename, val_filename, test_filename, embedding_filename,\
         test_file_list, out_file_list = get_command_line_parameters(cmd_args)
 
-    # Create embeddings index
-    embeddings_index = parser.embeddings_index(embedding_filename)
-    # Create word index from words in embeddings file
-    word_index = parser.word_index(embeddings_index)
-    # Compute embedding matrix
-    embedding_matrix = parser.embedding_matrix(embeddings_index, word_index)
-    # Load and pre process training and validation data
-    x_train, y_train, _ = parser.parse_corpus(train_filename, word_index)
-    x_val, y_val, _ = parser.parse_corpus(val_filename, word_index)
+    # Create embedding matrix
+    embedding_matrix, tokenizer = parser.embeddings_file2embeddings_matrix(embedding_filename)
+    # Load training and validation data
+    x_train_texts, y_train = parser.load_data(train_filename)
+    x_val_texts, y_val = parser.load_data(val_filename)
+    # Preprocess training and validation data
+    x_train = parser.preprocess_data(x_train_texts, tokenizer)
+    x_val = parser.preprocess_data(x_val_texts, tokenizer)
     # Load classifier
     model = classifier.compile_classifier(embedding_matrix)
     # Train classfier on humor_train.csv
     classifier.train_model(model, x_train, y_train, x_val, y_val)
     # Evaluate classifier on humor_test.csv
-    x_test, y_test, _ = parser.parse_corpus(test_filename, word_index)
+    x_test_texts, y_test = parser.load_data(test_filename)
+    x_test = parser.preprocess_data(x_test_texts, tokenizer)
     classifier.evaluate_model(model, x_test, y_test)
     # Test classifier on test_file1.csv,...,test_fileN.csv and save predictions on test_file1.out,...,test_fileN.out
     for i in range(len(test_file_list)):
         test_file = test_file_list[i]
         out_file = out_file_list[i]
-        x_test, y_test, _ = parser.parse_corpus(test_file, word_index)
+        x_test_texts, y_test = parser.load_data(test_file)
+        x_test = parser.preprocess_data(x_test_texts, tokenizer)
         y_out = classifier.test_model(model, x_test)
         file_utils.save_array(y_out, out_file)
         print('Resulados guardados en {filename}'.format(filename=out_file))
