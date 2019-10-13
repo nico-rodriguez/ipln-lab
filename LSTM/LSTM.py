@@ -1,4 +1,4 @@
-from keras.callbacks import CSVLogger
+sfrom keras.callbacks import CSVLogger
 from keras.layers import Bidirectional, average, Dense, Embedding, GRU, Input, LSTM
 from keras.models import Model, Sequential
 from keras.utils import plot_model
@@ -185,8 +185,14 @@ if __name__ == '__main__':
     model = KerasClassifier(build_fn=lstm_gru, epochs=100, batch_size=10, verbose=0)
     #model.summary()
 
+    # to check how data is being processed
+    with open('output.txt', 'w', newline='', encoding="utf-8") as myfile:
+        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        wr.writerow(1)
+        wr.writerow('a')
+
     optimizer = ['SGD', 'RMSprop', 'Adagrad', 'Adadelta', 'Adam', 'Adamax', 'Nadam']
-    activation = ['relu', 'elu', 'selu']
+    activation = ['relu', 'elu', 'selu', 'tanh', 'softplus', 'softmax', 'softsign', 'sigmoid', 'hard_sigmoid']
     #init_mode = ['uniform', 'lecun_uniform', 'normal', 'zero', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform']
     #param_grid = dict(optimizer=optimizer, activation=activation)
     #grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1, cv=3)
@@ -195,7 +201,7 @@ if __name__ == '__main__':
 
 
     optimizer.append('softmax')
-    init_mode = ['uniform', 'normal' ] #'lecun_uniform'] #, 'normal']
+    init_mode =init_mode = ['uniform', 'lecun_uniform', 'normal', 'zero', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'] #'lecun_uniform'] #, 'normal']
     param_grid = dict(optimizer=optimizer, activation=activation, init_mode=init_mode)
     grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1, cv=3)
     grid_result = grid.fit(x_val, y_val)
@@ -206,7 +212,7 @@ if __name__ == '__main__':
 
 
     #print(model_sg.wv.most_similar_cosmul('peron'))
-    test_model('lstm_gru', model, x_train, y_train, x_val, y_val)
+    #test_model('lstm_gru', model, x_train, y_train, x_val, y_val)
 
     '''
     model = single_lstm(embedding_matrix)
