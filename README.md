@@ -45,3 +45,17 @@ donde:
 ### Archivos de salida
 
 El formato de los archivos de salida correspondientes a los archivos de test es un conjunto de 0 y 1, separados por saltos de línea. Cada valor corresponde a la clasificación de una instancia.
+
+### Log de desarrollo
+
+# Parser
+ -Se agrega el módulo Parser para procesar los csv, obteniendo diccionario de word,indice (word_index).
+ -Se agregar el módulo que genera 
+# Arquitectura
+ -Se utilizaron redes lstm, gru de la librería Keras junto con los embeddings brindados en el curso. Se intentó luego con arquitecturas híbridas entre las mismas cambiando la cantidad de capas, la cantidad de neuronas por capa y la cantidad de epochs. Algunas de ellas fueron: single_lstm, triple_lstm, bidirectional_lstm, lstm_gru, parallel_bidirectional_lstm_lstm_gru. Se vió que los resultados obtenidos cambiando la arquitectura no afectaba de forma considerable el resultado, pero si los tiempos de ejecución.
+ Por lo tanto se decidió por utilizar la más simple posible que obtenga mejores resultados (lstm_gru).
+# Preprocesamiento
+-Para el preprocesamiento se intentó removiendo hashtags, retweets, cc, menciones, urls, emojis, además de otros caracteres para los que no había embeddings. Se vió que habían caracteres en otros idiomas, por lo que se utilizó una regex que solo tome caracteres latinos para el preprocesamiento. De igual forma los resultados empeoraron luego de esto, por lo que se volvió al final a no realizar preprocesamiento.
+
+
+
