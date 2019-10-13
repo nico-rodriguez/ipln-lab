@@ -13,6 +13,9 @@ import csv
 import nltk
 from operator import itemgetter
 from nltk.corpus import stopwords
+import demoji
+from difflib import get_close_matches
+
 """
 *** Parsing functions for the word embeddings ***
 """
@@ -45,6 +48,40 @@ def get_nearest(target, tokenizer, word_list_tmp):
             else:
                 return 0
 
+def try_recover_word(word, word_index, words_embeddings_array):
+    matches = get_close_matches(word, words_embeddings_array, 3, 0.8)
+    if len(matches) is 0:
+        print("-------")
+        print(word)
+        print("unable to match")
+        print("-------")
+        return -1, False
+    else:
+        first = matches[0]
+        index = word_index[first]
+        return index, True
+
+def process_word_list(word_list, word_index, words_embeddings_array):
+    result_word_list = []
+    match_count = 0
+    count = 0
+    for word in word_list:
+        if word in word_index:
+            match_count += 1
+            result_word_list.append(word_index[word])
+        else: #fijarse si la pudo recuperar
+            new_word, recovered = try_recover_word(word, word_index, words_embeddings_array)
+            result_word_list.append(new_word)
+            if recovered:
+                match_count += 1
+        count += 1
+    return result_word_list, match_count, count
+
+def sorted_dict_keys(dict):
+    keys = dict.keys()
+    sorted(keys)
+    return keys
+
 """
 Parse the word embeddings file. Returns a dictionary that maps words to their respective word embedding vector.
 """
@@ -58,7 +95,6 @@ def embeddings_index(word_embedding_filename):
             embeddings_index[word] = coefs
     print('Found %s word vectors.' % len(embeddings_index))
     return embeddings_index
-
 
 """
 Given a index of embeddings (dictionary of word->(vector embedding)), return a word index (dictionary of word->number).
@@ -851,33 +887,30 @@ def remove_stop_words(text):
     else:
         return text
 
-def conditional_lowercase(word):
-    if word.isupper():
-        return word.lower()
-    else:
-        return word
-
 def clean_tweet(tweet):
-    #print('tweet cleaned')
     tweet = re.sub('http\S+\s*', '', tweet)  # remove URLs
     tweet = re.sub('RT|cc', '', tweet)  # remove RT and cc
     tweet = re.sub('#\S+', '', tweet)  # remove hashtags
     tweet = re.sub('@\S+', '', tweet)  # remove mentions
-    tweet = re.sub('[%s]' % re.escape(""""#$%&'()*+,/:;<=>@[\]^_`{|}~"""), '', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
-    tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespace
-    tweet = re.sub('\n', ' ', tweet)
+    tweet = re.sub('[%s]' % re.escape(""""#;<=>@[\]^_`{|}~"""), ' ', tweet)  # remove punctuations (removed . ? - ! to check if it improves)
+    tweet = re.sub('[0-9]+', ' ', tweet)
+    tweet = re.sub('[%s]' % re.escape(""""öńùüèǝìʇʌɹòäê¾¾ë½ıª¼ôçàʺ"""), ' ', tweet)
+    tweet = re.sub('\s+', ' ', tweet)  # remove extra whitespaces
+    tweet = re.sub(r'—','-',tweet)
+    tweet = re.sub('[^\x00-\x7F\x80-\xFF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF]',' ', tweet) 
+    demoji.replace(tweet)
     return tweet
 
+
 def pre_process_tweets(tweets):
-    clean_list = tweets.lower().strip().split()
+    clean_list = tweets.strip().split()
     clean_list = list(map(clean_tweet, clean_list))
     return ' '.join(clean_list)
-
 
 """
 Receives a corpus file name and parses it, returning
 """
-def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown_words=False, clean_up=False):
+def parse_corpus(corpus_filename, word_index, embeddings_index, max_features=35569, remove_unknown_words=False, clean_up=False):
     print('Parsing {file_name}...'.format(file_name=corpus_filename))
     df = pd.read_csv(corpus_filename)
     tokenizer = Tokenizer(num_words=max_features, filters='', lower=False, split=' ', char_level=False)
@@ -886,30 +919,33 @@ def parse_corpus(corpus_filename, word_index, max_features=35569, remove_unknown
         texts_list = list(map(pre_process_tweets, texts_list))
     texts_list = list(map(space_non_alphanumeric, texts_list))
     tokenizer.fit_on_texts(texts_list)
+    
+    words_index_array = sorted_dict_keys(word_index)
+    match_count=0
+    max_count=0
 
     # to check how data is being processed
-    with open('corpusss.csv', 'w', newline='', encoding="utf-8") as myfile:
-        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-        wr.writerow(texts_list)
+    #with open('corpusss.csv', 'w', newline='', encoding="utf-8") as myfile:
+    #    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    #    wr.writerow(texts_list)
 
     list_tokenized_texts = []
-
     for i in range(len(texts_list)):
         word_list = text_to_word_sequence(texts_list[i], filters='', lower=False, split=' ')
-        word_list = list(map(remove_stop_words, word_list))
-        word_list = [elem for elem in word_list if elem]
+        processed_word_list, match, count = process_word_list(word_list, word_index, words_index_array)
+        list_tokenized_texts.append(processed_word_list)
+        match_count += match
+        max_count += count
         if remove_unknown_words:
-            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else -1, word_list)))
             list_tokenized_texts[-1] = list(filter(lambda x: x != -1, list_tokenized_texts[-1]))
         else:
-            list_tokenized_texts.append(list(map(lambda x: word_index[x] if x in word_index else 0, word_list)))    # save index 0 for unknown words
-
-    max_len = 30    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
+            list_tokenized_texts[-1] = list(map(lambda x: x if x != -1 else 0, list_tokenized_texts[-1]))   # save index 0 for unknown words
+    max_len = 40    # on data_test.csv, the maximum number of words in a tweet is 43. So max_len=40 seems reasonable
     x = pad_sequences(list_tokenized_texts, maxlen=max_len)
     y = df['humor'].tolist()
     print('{texts_num} texts processed'.format(texts_num=len(x)))
     print('{vocab_num} different words'.format(vocab_num=len(tokenizer.word_index)))
-    return x, y, tokenizer.word_index
+    return x, y, tokenizer.word_index, match_count, max_count
 
 
 """

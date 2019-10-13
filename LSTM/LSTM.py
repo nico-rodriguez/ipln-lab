@@ -7,7 +7,8 @@ from tensorflow.logging import set_verbosity
 #from matplotlib import pyplot
 from Metrics import Metrics
 import Parser
-
+import time
+import datetime
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import GridSearchCV
 
@@ -57,7 +58,7 @@ def bidirectional_lstm(embedding_matrix):
 def lstm_gru(dropout=0.1, recurrent_dropout=0.1, kernel_initializer='glorot_uniform', activation = 'relu', optimizer='adam', init_mode='uniform'):
     units = 30
     model = Sequential()
-    model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=30,
+    model.add(Embedding(input_dim=embedding_matrix.shape[0], output_dim=embedding_matrix.shape[1], input_length=40,
                         weights=[embedding_matrix], trainable=False, mask_zero=True))
     #model.add(LSTM(units=units, dropout=0.2, recurrent_dropout=0.2, kernel_initializer='glorot_uniform',
     #              activation='softsign', return_sequences=True))
@@ -157,6 +158,7 @@ def test_model(model_name, model, x_train, y_train, x_val, y_val):
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     #../word_embedding/intropln2019_embeddings_es_300.txt
     #../word_embedding/SBW-vectors-300-min5.txt
     WORD_EMBEDDINGS_FILENAME = '../word_embedding/intropln2019_embeddings_es_300.txt'
@@ -170,7 +172,7 @@ if __name__ == '__main__':
     vector_size = 300
     remove_unknown_words = True
     #remove_unknown_words = False
-    perform_clean_up = False
+    perform_clean_up = True
     #perform_clean_up = True
 
     embeddings_index = Parser.embeddings_index(WORD_EMBEDDINGS_FILENAME)
@@ -178,9 +180,12 @@ if __name__ == '__main__':
     #global embedding_matrix
     embedding_matrix = Parser.embedding_matrix(embeddings_index, word_index, vector_size, remove_unknown_words)
 
-    x_train, y_train, _ = Parser.parse_corpus(DATA_TRAIN, word_index, max_features, remove_unknown_words, perform_clean_up)
-    x_val, y_val, _ = Parser.parse_corpus(DATA_VAL, word_index, max_features, remove_unknown_words, perform_clean_up)
+    x_train, y_train, _, c1, m1 = Parser.parse_corpus(DATA_TRAIN, word_index, embeddings_index, max_features, remove_unknown_words, perform_clean_up)
+    x_val, y_val, _, c2, m2 = Parser.parse_corpus(DATA_VAL, word_index, embeddings_index, max_features, remove_unknown_words, perform_clean_up)
 
+    print("counts:")
+    print(m1-c1)
+    print(m2-c2)
 
     model = KerasClassifier(build_fn=lstm_gru, epochs=100, batch_size=10, verbose=0)
     #model.summary()
@@ -193,21 +198,17 @@ if __name__ == '__main__':
     #grid_result = grid.fit(x_val, y_val)
     #print(grid_result.best_params_, grid_result.best_score_)
 
-
-    optimizer.append('softmax')
+    ''' optimizer.append('softmax')
     init_mode = ['uniform', 'normal' ] #'lecun_uniform'] #, 'normal']
     param_grid = dict(optimizer=optimizer, activation=activation, init_mode=init_mode)
     grid = GridSearchCV(estimator=model, param_grid=param_grid, n_jobs=1, cv=3)
     grid_result = grid.fit(x_val, y_val)
-    print(grid_result.best_params_, grid_result.best_score_)
-
-
-
+    print(grid_result.best_params_, grid_result.best_score_)'''
 
 
     #print(model_sg.wv.most_similar_cosmul('peron'))
     test_model('lstm_gru', model, x_train, y_train, x_val, y_val)
-
+    print("--- %s Elapsed time ---" % (str(datetime.timedelta(seconds=(time.time() - start_time)))))
     '''
     model = single_lstm(embedding_matrix)
     test_model('single_lstm', model, x_train, y_train, x_val, y_val)
