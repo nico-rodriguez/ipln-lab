@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=red_neuronal_1
-#SBATCH --ntasks=4
+#SBATCH --ntasks=1
 #SBATCH --mem=16384
 #SBATCH --time=48:00:00
 #SBATCH --tmp=16G
@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ignacioferre@gmail.com
 
-source ../../../python_env/bin/activate
+source /python_env/bin/activate
 
 cd ipln/ipln-lab/LSTM
 python3 LSTM.py
