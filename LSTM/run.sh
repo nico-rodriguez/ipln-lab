@@ -9,7 +9,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=ignacioferre@gmail.com
 
-source /python_env/bin/activate
+source ../../../python_env/bin/activate
 
 cd ipln/ipln-lab/LSTM
 python3 LSTM.py
