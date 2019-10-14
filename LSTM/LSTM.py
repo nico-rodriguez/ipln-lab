@@ -1,4 +1,4 @@
-sfrom keras.callbacks import CSVLogger
+from keras.callbacks import CSVLogger
 from keras.layers import Bidirectional, average, Dense, Embedding, GRU, Input, LSTM
 from keras.models import Model, Sequential
 from keras.utils import plot_model
