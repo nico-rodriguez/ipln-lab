@@ -1,7 +1,7 @@
 Brlapi==0.6.5
 chardet==2.3.0
 cupshelpers==1.0
-httplib2==0.9.2
+httplib2==0.19.0
 louis==3.0.0
 pycups==1.9.73
 pycurl==7.43.0
